@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<!-- saved from url=(0057)file:///C:/Users/taxi-/Downloads/taxi_facturation_15.html -->
+<html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Taxi Bas Omer — Saisie courses</title>
+<style>
+  :root {
+    --noir: #1a1a1a; --gris-fonce: #2d2d2d; --gris-moyen: #555;
+    --gris-clair: #e8e8e8; --fond: #f5f4f0; --blanc: #ffffff;
+    --jaune: #f5c842; --jaune-fonce: #c9a100;
+    --vert: #2d7a4f; --vert-clair: #e8f5ee;
+    --rouge: #c0392b; --rouge-clair: #fdf0ee;
+    --bleu: #2c5f8a; --bleu-clair: #eef4fb;
+    --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--fond); color: var(--noir); min-height: 100vh; font-size: 16px; }
+
+  header { background: var(--noir); color: var(--blanc); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  header h1 { font-size: 17px; font-weight: 600; }
+  .badge-semaine { background: var(--jaune); color: var(--noir); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+
+  .tabs { display: flex; background: var(--blanc); border-bottom: 1px solid var(--gris-clair); position: sticky; top: 53px; z-index: 99; }
+  .tab { flex: 1; padding: 14px 8px; text-align: center; font-size: 13px; font-weight: 500; color: var(--gris-moyen); cursor: pointer; border-bottom: 2px solid transparent; }
+  .tab.active { color: var(--noir); border-bottom-color: var(--jaune); font-weight: 700; }
+
+  .page { display: none; padding: 16px; max-width: 600px; margin: 0 auto; }
+  .page.active { display: block; }
+  .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--gris-moyen); margin: 20px 0 10px; }
+
+  .card { background: var(--blanc); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 12px; }
+
+  .toggle-ar { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--blanc); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 12px; }
+  .toggle-ar strong { font-size: 15px; }
+  .toggle-ar span { font-size: 12px; color: var(--gris-moyen); display: block; margin-top: 2px; }
+  .switch { position: relative; width: 50px; height: 28px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top:0; left:0; right:0; bottom:0; background: var(--gris-clair); border-radius: 28px; transition: .3s; }
+  .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .3s; }
+  input:checked + .slider { background: var(--jaune); }
+  input:checked + .slider:before { transform: translateX(22px); }
+
+  .ticket-bloc { border: 2px dashed var(--gris-clair); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+  .ticket-bloc.done { border-color: var(--vert); background: var(--vert-clair); }
+  .ticket-bloc-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+
+  .photo-btn { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px; background: var(--fond); border: none; border-radius: 10px; cursor: pointer; text-align: left; }
+  .photo-icon { width: 44px; height: 44px; border-radius: 10px; background: var(--gris-clair); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .photo-label strong { display: block; font-size: 14px; font-weight: 600; }
+  .photo-label span { font-size: 11px; color: var(--gris-moyen); }
+  input[type="file"] { display: none; }
+
+  .img-preview { width: 100%; max-height: 140px; object-fit: cover; border-radius: 8px; margin-top: 8px; display: none; }
+  .img-preview.visible { display: block; }
+
+  .loader { display: none; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bleu-clair); border-radius: 8px; font-size: 13px; color: var(--bleu); margin-top: 8px; }
+  .loader.visible { display: flex; }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--bleu); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .champs-extraits { display: none; margin-top: 10px; }
+  .champs-extraits.visible { display: block; }
+  .champ-row { display: flex; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--gris-clair); gap: 8px; }
+  .champ-row:last-child { border-bottom: none; }
+  .champ-key { font-size: 10px; color: var(--gris-moyen); font-weight: 700; width: 120px; flex-shrink: 0; padding-top: 3px; text-transform: uppercase; }
+  .champ-val { font-size: 13px; font-weight: 500; flex: 1; background: none; border: none; color: var(--noir); font-family: inherit; padding: 0; width: 100%; }
+  .champ-val:focus { outline: none; color: var(--bleu); }
+  .champ-val-edit { font-size: 13px; font-weight: 500; flex: 1; background: var(--fond); border: 1px solid var(--gris-clair); border-radius: 6px; color: var(--noir); font-family: inherit; padding: 4px 8px; width: 100%; }
+  .champ-val-edit:focus { outline: none; border-color: var(--jaune); }
+  .tag-vert { display: inline-block; background: var(--vert-clair); color: var(--vert); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+  .tag-rouge { display: inline-block; background: var(--rouge-clair); color: var(--rouge); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+
+  /* Toggle autoroute */
+  .autoroute-bloc { background: var(--fond); border-radius: 10px; padding: 12px 14px; margin-top: 10px; }
+  .autoroute-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .autoroute-row label { font-size: 13px; font-weight: 600; }
+  .montant-row { display: flex; align-items: center; gap: 8px; }
+  .montant-row label { font-size: 12px; color: var(--gris-moyen); }
+  .montant-input { border: 1.5px solid var(--gris-clair); border-radius: 8px; padding: 6px 10px; font-size: 13px; width: 100px; font-family: inherit; }
+  .montant-input:focus { outline: none; border-color: var(--jaune); }
+
+  .erreur { display: none; background: var(--rouge-clair); color: var(--rouge); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-top: 8px; }
+  .erreur.visible { display: block; }
+
+  .btn-principal { width: 100%; padding: 18px; background: var(--jaune); color: var(--noir); font-size: 16px; font-weight: 700; border: none; border-radius: var(--radius); cursor: pointer; margin-top: 20px; }
+  .btn-principal:active { background: var(--jaune-fonce); }
+  .btn-principal:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-secondaire { width: 100%; padding: 14px; background: var(--blanc); color: var(--gris-fonce); font-size: 14px; font-weight: 600; border: 1.5px solid var(--gris-clair); border-radius: var(--radius); cursor: pointer; margin-top: 8px; }
+
+  /* LISTE COURSES */
+  .recap-course { background: var(--blanc); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 10px; border-left: 4px solid var(--jaune); }
+  .recap-course-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .recap-nom { font-size: 15px; font-weight: 700; }
+  .recap-date { font-size: 12px; color: var(--gris-moyen); }
+  .recap-infos { font-size: 13px; color: var(--gris-moyen); line-height: 1.6; }
+  .recap-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .btn-modifier { background: var(--bleu-clair); color: var(--bleu); border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 10px; margin-right: 6px; }
+  .btn-supprimer { background: var(--rouge-clair); color: var(--rouge); border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+
+  /* MODAL ÉDITION */
+  .modal-overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); z-index: 200; overflow-y: auto; }
+  .modal-overlay.visible { display: block; }
+  .modal { background: var(--blanc); border-radius: var(--radius) var(--radius) 0 0; padding: 20px; position: absolute; bottom: 0; left: 0; right: 0; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+  .modal-section { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--gris-moyen); margin: 14px 0 8px; }
+  .modal-field { margin-bottom: 10px; }
+  .modal-field label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--gris-moyen); display: block; margin-bottom: 4px; }
+  .modal-field input, .modal-field select { width: 100%; border: 1.5px solid var(--gris-clair); border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: inherit; }
+  .modal-field input:focus, .modal-field select:focus { outline: none; border-color: var(--jaune); }
+  .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .modal-actions .btn-principal { margin-top: 0; flex: 1; padding: 14px; }
+  .modal-actions .btn-secondaire { margin-top: 0; flex: 1; padding: 14px; }
+
+  .liste-vide { text-align: center; padding: 48px 20px; color: var(--gris-moyen); }
+  .liste-vide .emoji { font-size: 48px; margin-bottom: 12px; }
+
+  .export-card { background: var(--noir); color: var(--blanc); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; }
+  .export-card h3 { font-size: 16px; margin-bottom: 6px; }
+  .export-card p { font-size: 13px; color: #aaa; margin-bottom: 16px; }
+  .btn-export { width: 100%; padding: 14px; background: var(--jaune); color: var(--noir); font-size: 14px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-card { background: var(--blanc); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+  .stat-val { font-size: 24px; font-weight: 700; }
+  .stat-label { font-size: 11px; color: var(--gris-moyen); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--gris-clair); }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { font-size: 14px; font-weight: 500; }
+  .setting-input { border: 1.5px solid var(--gris-clair); border-radius: 8px; padding: 8px 12px; font-size: 14px; font-family: inherit; width: 160px; text-align: right; }
+  .setting-input:focus { outline: none; border-color: var(--jaune); }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--noir); color: var(--blanc); padding: 12px 20px; border-radius: 24px; font-size: 14px; font-weight: 500; transition: transform 0.3s ease; z-index: 999; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .success-banner { display: none; background: var(--vert-clair); border: 1.5px solid var(--vert); color: var(--vert); border-radius: var(--radius); padding: 14px; font-size: 14px; font-weight: 600; margin-top: 12px; text-align: center; }
+  .success-banner.visible { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚕 Taxi Bas Omer</h1>
+  <span id="badge-semaine" class="badge-semaine">0 trajet</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab(&#39;saisie&#39;)">+ Nouvelle</div>
+  <div class="tab" onclick="showTab(&#39;courses&#39;)">Mes courses</div>
+  <div class="tab" onclick="showTab(&#39;export&#39;)">Export</div>
+  <div class="tab" onclick="showTab(&#39;reglages&#39;)">Réglages</div>
+</div>
+
+<!-- PAGE SAISIE -->
+<div class="page active" id="page-saisie">
+  <div class="toggle-ar" style="margin-top:8px;">
+    <div>
+      <strong>Aller-retour</strong>
+      <span id="label-ar">Simple trajet — 1 ticket</span>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="toggle-ar" onchange="toggleAllerRetour()">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="section-title">Bon de transport</div>
+  <div class="card">
+    <label class="photo-btn" for="input-bon">
+      <div class="photo-icon">📋</div>
+      <div class="photo-label">
+        <strong>Photo du bon de transport</strong>
+        <span>Commun à l'aller et au retour</span>
+      </div>
+      <span id="check-bon">📷</span>
+    </label>
+    <input type="file" id="input-bon" accept="image/*,application/pdf" onchange="handlePhoto(&#39;bon&#39;, this)">
+    <img class="img-preview" id="preview-bon">
+    <div class="loader" id="loader-bon"><div class="spinner"></div><span>Claude lit le bon…</span></div>
+    <div class="erreur" id="erreur-bon"></div>
+    <div class="champs-extraits" id="champs-bon"></div>
+  </div>
+
+  <div class="section-title" id="titre-tickets">Ticket taximètre</div>
+
+  <div class="ticket-bloc" id="bloc-aller">
+    <div class="ticket-bloc-title">🧾 <span id="label-ticket-aller">Ticket</span></div>
+    <label class="photo-btn" for="input-aller">
+      <div class="photo-icon">🧾</div>
+      <div class="photo-label">
+        <strong id="label-btn-aller">Photo du ticket</strong>
+        <span>Date, heures, lieux, tarif</span>
+      </div>
+      <span id="check-aller">📷</span>
+    </label>
+    <input type="file" id="input-aller" accept="image/*" onchange="handlePhoto(&#39;aller&#39;, this)">
+    <img class="img-preview" id="preview-aller">
+    <div class="loader" id="loader-aller"><div class="spinner"></div><span>Claude lit le ticket…</span></div>
+    <div class="erreur" id="erreur-aller"></div>
+    <div class="champs-extraits" id="champs-aller"></div>
+    <!-- AUTOROUTE ALLER -->
+    <div class="autoroute-bloc" id="autoroute-aller-bloc" style="display:none;">
+      <div class="autoroute-row">
+        <label>🛣️ Autoroute ?</label>
+        <label class="switch">
+          <input type="checkbox" id="autoroute-aller" onchange="toggleMontantAutoroute(&#39;aller&#39;)">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="montant-row" id="montant-aller-row" style="display:none;">
+        <label>Montant péage :</label>
+        <input class="montant-input" id="montant-aller" type="number" step="0.01" placeholder="0.00" value="0"> €
+      </div>
+    </div>
+  </div>
+
+  <div class="ticket-bloc" id="bloc-retour" style="display:none;">
+    <div class="ticket-bloc-title">🧾 Ticket retour</div>
+    <label class="photo-btn" for="input-retour">
+      <div class="photo-icon">🧾</div>
+      <div class="photo-label">
+        <strong>Photo du ticket retour</strong>
+        <span>Le ticket avec l'heure la plus tardive</span>
+      </div>
+      <span id="check-retour">📷</span>
+    </label>
+    <input type="file" id="input-retour" accept="image/*" onchange="handlePhoto(&#39;retour&#39;, this)">
+    <img class="img-preview" id="preview-retour">
+    <div class="loader" id="loader-retour"><div class="spinner"></div><span>Claude lit le ticket retour…</span></div>
+    <div class="erreur" id="erreur-retour"></div>
+    <div class="champs-extraits" id="champs-retour"></div>
+    <!-- AUTOROUTE RETOUR -->
+    <div class="autoroute-bloc" id="autoroute-retour-bloc" style="display:none;">
+      <div class="autoroute-row">
+        <label>🛣️ Autoroute ?</label>
+        <label class="switch">
+          <input type="checkbox" id="autoroute-retour" onchange="toggleMontantAutoroute(&#39;retour&#39;)">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="montant-row" id="montant-retour-row" style="display:none;">
+        <label>Montant péage :</label>
+        <input class="montant-input" id="montant-retour" type="number" step="0.01" placeholder="0.00" value="0"> €
+      </div>
+    </div>
+  </div>
+
+  <div class="success-banner" id="success-banner">✅ Course(s) enregistrée(s) !</div>
+  <button class="btn-principal" id="btn-enregistrer" onclick="enregistrerCourse()" disabled="">Enregistrer</button>
+  <button class="btn-secondaire" onclick="resetSaisie()">Recommencer</button>
+</div>
+
+<!-- PAGE COURSES -->
+<div class="page" id="page-courses">
+  <div class="section-title">Cette semaine</div>
+  <div id="liste-courses"></div>
+</div>
+
+<!-- PAGE EXPORT -->
+<div class="page" id="page-export">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-val" id="stat-nb">0</div><div class="stat-label">Trajets</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-vide">0</div><div class="stat-label">Retours à vide</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-hosp">0</div><div class="stat-label">Hospitalisations</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-ar">0</div><div class="stat-label">Aller-retours</div></div>
+  </div>
+  <div class="export-card">
+    <h3>Export CSV</h3>
+    <p>Télécharge tous les trajets de la semaine — un aller-retour = 2 lignes.</p>
+    <button class="btn-export" onclick="exportCSV()">⬇️ Télécharger le CSV</button>
+  </div>
+  <button class="btn-secondaire" onclick="if(confirm(&#39;Effacer toutes les courses ?&#39;)) viderSemaine()" style="margin-top:4px; color:var(--rouge); border-color:var(--rouge)">Vider la semaine</button>
+</div>
+
+<!-- PAGE RÉGLAGES -->
+<div class="page" id="page-reglages">
+  <div class="section-title">Clé API</div>
+  <div class="card">
+    <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:8px;">
+      <span class="setting-label">Clé Anthropic API</span>
+      <input class="setting-input" id="set-apikey" placeholder="sk-ant-..." type="password" style="width:100%; text-align:left;" oninput="sauvegarderApiKey()">
+      <span style="font-size:11px; color:var(--gris-moyen)">Saisie une seule fois, sauvegardée automatiquement</span>
+    </div>
+  </div>
+
+  <div class="section-title">Répertoire structures de soins</div>
+  <div class="card" id="card-structures">
+    <div id="liste-structures">
+    <div style="display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--gris-clair);">
+      <div style="flex:1;">
+        <div style="font-size:13px; font-weight:600;">CENTRE LEON BERARD</div>
+        <div style="font-size:11px; color:var(--gris-moyen);">FINESS : 690000880</div>
+      </div>
+      <button onclick="supprimerStructure(0)" style="background:var(--rouge-clair);color:var(--rouge);border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">✕</button>
+    </div>
+  
+    <div style="display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--gris-clair);">
+      <div style="flex:1;">
+        <div style="font-size:13px; font-weight:600;">CENTRE LÉON BÉRARD</div>
+        <div style="font-size:11px; color:var(--gris-moyen);">FINESS : 690000880</div>
+      </div>
+      <button onclick="supprimerStructure(1)" style="background:var(--rouge-clair);color:var(--rouge);border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">✕</button>
+    </div>
+  </div>
+    <button class="btn-secondaire" onclick="ajouterStructure()" style="margin-top:8px;">+ Ajouter une structure</button>
+  </div>
+
+  <div class="section-title">Infos fixes</div>
+  <div class="card">
+    <div class="setting-row">
+      <span class="setting-label">Identifiant conducteur</span>
+      <input class="setting-input" id="set-conducteur" placeholder="ex: 001" oninput="sauvegarderReglages()">
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">N° immatriculation</span>
+      <input class="setting-input" id="set-immat" placeholder="HH-443-ZT" oninput="sauvegarderReglages()">
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Raison sociale</span>
+      <input class="setting-input" id="set-raison" placeholder="Taxi Bas Omer" oninput="sauvegarderReglages()">
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ÉDITION -->
+<div class="modal-overlay" id="modal-overlay" onclick="fermerModal(event)">
+  <div class="modal" id="modal-content">
+    <h3>✏️ Modifier la course</h3>
+    <input type="hidden" id="modal-id">
+
+    <div class="modal-section">Ticket taximètre</div>
+    <div class="modal-field"><label>Date</label><input id="m-date" type="text" placeholder="JJ/MM/AAAA"></div>
+    <div class="modal-field"><label>Heure départ</label><input id="m-hdep" type="text" placeholder="HH:MM"></div>
+    <div class="modal-field"><label>Heure arrivée</label><input id="m-harr" type="text" placeholder="HH:MM"></div>
+    <div class="modal-field"><label>Lieu départ</label><input id="m-ldep" type="text"></div>
+    <div class="modal-field"><label>Lieu arrivée</label><input id="m-larr" type="text"></div>
+    <div class="modal-field"><label>Distance (km)</label><input id="m-dist" type="text"></div>
+    <div class="modal-field"><label>Tarif (A/B/C/D)</label>
+      <select id="m-tarif">
+        <option value="A">A — retour avec client</option>
+        <option value="B">B — retour avec client</option>
+        <option value="C">C — retour à vide</option>
+        <option value="D">D — retour à vide</option>
+      </select>
+    </div>
+    <div class="modal-field"><label>Retour à vide</label>
+      <select id="m-vide"><option value="OUI">OUI</option><option value="NON">NON</option></select>
+    </div>
+    <div class="modal-field"><label>Autoroute</label>
+      <select id="m-autoroute" onchange="toggleModalMontant()">
+        <option value="NON">NON</option><option value="OUI">OUI</option>
+      </select>
+    </div>
+    <div class="modal-field" id="modal-montant-field" style="display:none;">
+      <label>Montant péage (€)</label><input id="m-montant-auto" type="number" step="0.01" placeholder="0.00">
+    </div>
+
+    <div class="modal-section">Bon de transport</div>
+    <div class="modal-field"><label>Nom patient</label><input id="m-nom" type="text"></div>
+    <div class="modal-field"><label>Prénom patient</label><input id="m-prenom" type="text"></div>
+    <div class="modal-field"><label>N° sécu</label><input id="m-secu" type="text"></div>
+    <div class="modal-field"><label>Adresse patient</label><input id="m-adresse" type="text"></div>
+    <div class="modal-field"><label>Type transport</label>
+      <select id="m-type"><option value="HOSPITALISATION">HOSPITALISATION</option><option value="CONSULTATION">CONSULTATION</option></select>
+    </div>
+    <div class="modal-field"><label>ALD exonérante</label>
+      <select id="m-ald"><option value="OUI">OUI</option><option value="NON">NON</option></select>
+    </div>
+    <div class="modal-field"><label>Médecin</label><input id="m-medecin" type="text"></div>
+    <div class="modal-field"><label>N° RPPS</label><input id="m-rpps" type="text"></div>
+    <div class="modal-field"><label>Structure soins</label><input id="m-structure" type="text"></div>
+    <div class="modal-field"><label>Caisse santé</label><input id="m-caisse" type="text"></div>
+    <div class="modal-field"><label>N° FINESS structure</label><input id="m-finess" type="text"></div>
+    <div class="modal-field"><label>Date de prescription</label><input id="m-dateprescription" type="text" placeholder="JJ/MM/AAAA"></div>
+
+    <div class="modal-actions">
+      <button class="btn-secondaire" onclick="fermerModalBtn()">Annuler</button>
+      <button class="btn-principal" onclick="sauvegarderModif()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_KEY = localStorage.getItem('api_key') || '';
+
+let estAllerRetour = false;
+let donneesBon = null;
+let donneesAller = null;
+let donneesRetour = null;
+let courses = JSON.parse(localStorage.getItem('courses_taxi') || '[]');
+let structures = JSON.parse(localStorage.getItem('structures_taxi') || '[{"nom":"CENTRE LEON BERARD","finess":"690000880"},{"nom":"CENTRE LÉON BÉRARD","finess":"690000880"}]');
+let reglages = JSON.parse(localStorage.getItem('reglages_taxi') || '{}');
+
+document.getElementById('set-conducteur').value = reglages.conducteur || '';
+document.getElementById('set-apikey').value = localStorage.getItem('api_key') || '';
+document.getElementById('set-immat').value = reglages.immat || 'HH-443-ZT';
+document.getElementById('set-raison').value = reglages.raison || 'Taxi Bas Omer';
+majBadge();
+renderStructures();
+
+function renderStructures() {
+  const el = document.getElementById('liste-structures');
+  if (!el) return;
+  if (!structures.length) {
+    el.innerHTML = '<p style="font-size:13px; color:var(--gris-moyen); padding:8px 0;">Aucune structure enregistrée.</p>';
+    return;
+  }
+  el.innerHTML = structures.map((s, i) => `
+    <div style="display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--gris-clair);">
+      <div style="flex:1;">
+        <div style="font-size:13px; font-weight:600;">${s.nom}</div>
+        <div style="font-size:11px; color:var(--gris-moyen);">FINESS : ${s.finess}</div>
+      </div>
+      <button onclick="supprimerStructure(${i})" style="background:var(--rouge-clair);color:var(--rouge);border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">✕</button>
+    </div>
+  `).join('');
+}
+
+function ajouterStructure() {
+  const nom = prompt('Nom de la structure (ex: CENTRE LEON BERARD) :');
+  if (!nom) return;
+  const finess = prompt('N° FINESS de cette structure :');
+  if (!finess) return;
+  structures.push({ nom: nom.toUpperCase(), finess: finess.trim() });
+  localStorage.setItem('structures_taxi', JSON.stringify(structures));
+  renderStructures();
+  showToast('✅ Structure ajoutée !');
+}
+
+function supprimerStructure(i) {
+  if (!confirm('Supprimer cette structure ?')) return;
+  structures.splice(i, 1);
+  localStorage.setItem('structures_taxi', JSON.stringify(structures));
+  renderStructures();
+}
+
+function getApiKey() {
+  return localStorage.getItem('api_key') || '';
+}
+
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['saisie','courses','export','reglages'][i] === id));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (id === 'courses') renderCourses();
+  if (id === 'export') renderStats();
+}
+
+function toggleAllerRetour() {
+  estAllerRetour = document.getElementById('toggle-ar').checked;
+  document.getElementById('label-ar').textContent = estAllerRetour ? 'Aller-retour — 2 tickets' : 'Simple trajet — 1 ticket';
+  document.getElementById('titre-tickets').textContent = estAllerRetour ? 'Tickets taximètre (aller + retour)' : 'Ticket taximètre';
+  document.getElementById('label-ticket-aller').textContent = estAllerRetour ? 'Ticket aller' : 'Ticket';
+  document.getElementById('label-btn-aller').textContent = estAllerRetour ? 'Photo du ticket aller' : 'Photo du ticket';
+  document.getElementById('bloc-retour').style.display = estAllerRetour ? 'block' : 'none';
+  if (!estAllerRetour) { donneesRetour = null; resetTicketBloc('retour'); }
+  verifierPret();
+}
+
+function toggleMontantAutoroute(sens) {
+  const checked = document.getElementById('autoroute-' + sens).checked;
+  document.getElementById('montant-' + sens + '-row').style.display = checked ? 'flex' : 'none';
+}
+
+function toggleModalMontant() {
+  document.getElementById('modal-montant-field').style.display =
+    document.getElementById('m-autoroute').value === 'OUI' ? 'block' : 'none';
+}
+
+function resetTicketBloc(type) {
+  document.getElementById('check-' + type).textContent = '📷';
+  document.getElementById('bloc-' + type).classList.remove('done');
+  const p = document.getElementById('preview-' + type); if(p){ p.classList.remove('visible'); p.src=''; }
+  const l = document.getElementById('loader-' + type); if(l) l.classList.remove('visible');
+  const e = document.getElementById('erreur-' + type); if(e) e.classList.remove('visible');
+  const c = document.getElementById('champs-' + type); if(c){ c.classList.remove('visible'); c.innerHTML=''; }
+  const i = document.getElementById('input-' + type); if(i) i.value='';
+  const ab = document.getElementById('autoroute-' + type + '-bloc'); if(ab) ab.style.display = 'none';
+}
+
+async function handlePhoto(type, input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const previewId = type === 'bon' ? 'preview-bon' : 'preview-' + type;
+  const reader = new FileReader();
+  reader.onload = e => { document.getElementById(previewId).src = e.target.result; document.getElementById(previewId).classList.add('visible'); };
+  reader.readAsDataURL(file);
+
+  const loaderId = type === 'bon' ? 'loader-bon' : 'loader-' + type;
+  const erreurId = type === 'bon' ? 'erreur-bon' : 'erreur-' + type;
+  const champsId = type === 'bon' ? 'champs-bon' : 'champs-' + type;
+
+  document.getElementById(loaderId).classList.add('visible');
+  document.getElementById(erreurId).classList.remove('visible');
+  document.getElementById(champsId).classList.remove('visible');
+
+  try {
+    const b64 = await fileToBase64(file);
+    const result = await analyserPhoto(type === 'bon' ? 'bon' : 'ticket', b64, file.type || 'image/jpeg');
+    if (type === 'bon') {
+      donneesBon = result;
+      // Chercher FINESS automatiquement
+      const structureTrouvee = structures.find(s =>
+        result.structure_soins && result.structure_soins.toUpperCase().includes(s.nom.toUpperCase().substring(0,8))
+      );
+      if (structureTrouvee && !result.numero_finess) {
+        donneesBon.numero_finess = structureTrouvee.finess;
+        result.numero_finess = structureTrouvee.finess;
+      }
+    }
+    else if (type === 'aller') { donneesAller = result; document.getElementById('autoroute-aller-bloc').style.display = 'block'; }
+    else { donneesRetour = result; document.getElementById('autoroute-retour-bloc').style.display = 'block'; }
+    afficherChamps(type, result);
+    document.getElementById(type === 'bon' ? 'check-bon' : 'check-' + type).textContent = '✅';
+    if (type !== 'bon') document.getElementById('bloc-' + type).classList.add('done');
+    verifierPret();
+  } catch(e) {
+    document.getElementById(erreurId).textContent = '❌ ' + e.message;
+    document.getElementById(erreurId).classList.add('visible');
+  } finally {
+    document.getElementById(loaderId).classList.remove('visible');
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = () => rej(new Error('Impossible de lire le fichier'));
+    r.readAsDataURL(file);
+  });
+}
+
+async function analyserPhoto(type, b64, mediaType) {
+  const promptTicket = `Extrait les données de ce ticket de taximètre français. Réponds UNIQUEMENT en JSON valide, sans markdown. NE PAS inclure les prix ou montants.
+{
+  "date": "JJ/MM/AAAA",
+  "heure_depart": "HH:MM",
+  "heure_arrivee": "HH:MM",
+  "lieu_depart": "ville ou lieu",
+  "lieu_arrivee": "ville ou lieu",
+  "distance_km": "nombre",
+  "tarif": "lettre A B C ou D uniquement",
+  "retour_a_vide": "OUI si tarif C ou D, NON si tarif A ou B"
+}`;
+
+  const promptBon = `Extrait les données de ce bon de transport médical français (cerfa 11575). Réponds UNIQUEMENT en JSON valide, sans markdown.
+{
+  "nom_patient": "NOM majuscules",
+  "prenom_patient": "Prénom",
+  "numero_secu": "numéro sécu complet",
+  "adresse_patient": "adresse complète",
+  "type_transport": "HOSPITALISATION ou CONSULTATION",
+  "ald_exonerante": "OUI ou NON",
+  "aller_retour": "OUI ou NON",
+  "nb_transports_serie": "nombre ou vide",
+  "nom_medecin": "Dr NOM Prénom",
+  "numero_rpps": "numéro RPPS",
+  "structure_soins": "nom établissement",
+  "adresse_structure": "adresse structure",
+  "caisse_sante": "nom caisse",
+  "numero_finess": "numéro FINESS de la structure de soins (code-barres numérique à côté du nom de l'établissement)",
+  "date_prescription": "JJ/MM/AAAA (date de signature/prescription du bon)",
+  "exoneration_ticket_moderateur": "OUI ou NON"
+}`;
+
+  const isPDF = mediaType === 'application/pdf';
+  const fileBlock = isPDF
+    ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } }
+    : { type: 'image', source: { type: 'base64', media_type: mediaType || 'image/jpeg', data: b64 } };
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': getApiKey(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6', max_tokens: 1000,
+      messages: [{ role: 'user', content: [fileBlock, { type: 'text', text: type === 'bon' ? promptBon : promptTicket }]}]
+    })
+  });
+
+  if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error?.message || 'Erreur API ' + resp.status); }
+  const data = await resp.json();
+  const text = data.content.map(c => c.text || '').join('').replace(/```json|```/g,'').trim();
+  try { return JSON.parse(text); } catch(e) { throw new Error('Photo illisible — reprends la photo plus nette'); }
+}
+
+const labelsTicket = {
+  date:'Date', heure_depart:'Départ', heure_arrivee:'Arrivée',
+  lieu_depart:'Lieu départ', lieu_arrivee:'Lieu arrivée',
+  distance_km:'Distance (km)', tarif:'Tarif', retour_a_vide:'Retour à vide'
+};
+const labelsBon = {
+  nom_patient:'Nom', prenom_patient:'Prénom', numero_secu:'N° sécu',
+  adresse_patient:'Adresse', type_transport:'Type', ald_exonerante:'ALD',
+  aller_retour:'Aller-retour', nb_transports_serie:'Série',
+  nom_medecin:'Médecin', numero_rpps:'N° RPPS', structure_soins:'Structure',
+  adresse_structure:'Adresse structure', caisse_sante:'Caisse',
+  numero_finess:'N° FINESS',
+  date_prescription:'Date prescription',
+  exoneration_ticket_moderateur:'Exo. TM'
+};
+
+function afficherChamps(type, data) {
+  const id = type === 'bon' ? 'champs-bon' : 'champs-' + type;
+  const labels = type === 'bon' ? labelsBon : labelsTicket;
+  const el = document.getElementById(id);
+  let html = '';
+  for (const [key, label] of Object.entries(labels)) {
+    const val = data[key] || ''; if (!val) continue;
+    let valHtml;
+    if (['OUI','HOSPITALISATION'].includes(val)) valHtml = `<span class="tag-vert">${val}</span>`;
+    else if (['NON','CONSULTATION'].includes(val)) valHtml = `<span class="tag-rouge">${val}</span>`;
+    else valHtml = `<input class="champ-val" value="${val.replace(/"/g,'&quot;')}" onchange="majChamp('${type}','${key}',this.value)">`;
+    html += `<div class="champ-row"><span class="champ-key">${label}</span>${valHtml}</div>`;
+  }
+  el.innerHTML = html; el.classList.add('visible');
+}
+
+function majChamp(type, key, val) {
+  if (type === 'bon') donneesBon[key] = val;
+  else if (type === 'aller') donneesAller[key] = val;
+  else if (type === 'retour') donneesRetour[key] = val;
+}
+
+function verifierPret() {
+  const ok = donneesBon && donneesAller && (!estAllerRetour || donneesRetour);
+  document.getElementById('btn-enregistrer').disabled = !ok;
+}
+
+function enregistrerCourse() {
+  // Vérifier que le FINESS est rempli
+  if (!donneesBon?.numero_finess) {
+    const finess = prompt('⚠️ N° FINESS manquant — entre le numéro FINESS de la structure de soins :');
+    if (!finess) { showToast('❌ FINESS requis pour enregistrer'); return; }
+    donneesBon.numero_finess = finess.trim();
+    // Proposer de sauvegarder dans le répertoire
+    if (donneesBon.structure_soins && confirm('Sauvegarder ce FINESS pour "' + donneesBon.structure_soins + '" dans le répertoire ?')) {
+      structures.push({ nom: donneesBon.structure_soins.toUpperCase(), finess: finess.trim() });
+      localStorage.setItem('structures_taxi', JSON.stringify(structures));
+      showToast('✅ Structure ajoutée au répertoire !');
+    }
+  }
+  const reg = JSON.parse(localStorage.getItem('reglages_taxi') || '{}');
+  const base = { bon: { ...donneesBon }, conducteur: reg.conducteur || '', immat: reg.immat || 'HH-443-ZT' };
+
+  const autorouteAller = document.getElementById('autoroute-aller').checked;
+  const montantAller = autorouteAller ? (document.getElementById('montant-aller').value || '0') : '';
+
+  courses.unshift({
+    id: Date.now(), sens: estAllerRetour ? 'Aller' : '',
+    date: donneesAller?.date || '',
+    ticket: { ...donneesAller, autoroute: autorouteAller ? 'OUI' : 'NON', montant_autoroute: montantAller },
+    ...base
+  });
+
+  if (estAllerRetour && donneesRetour) {
+    const autorouteRetour = document.getElementById('autoroute-retour').checked;
+    const montantRetour = autorouteRetour ? (document.getElementById('montant-retour').value || '0') : '';
+    courses.unshift({
+      id: Date.now() + 1, sens: 'Retour',
+      date: donneesRetour?.date || '',
+      ticket: { ...donneesRetour, autoroute: autorouteRetour ? 'OUI' : 'NON', montant_autoroute: montantRetour },
+      ...base
+    });
+  }
+
+  localStorage.setItem('courses_taxi', JSON.stringify(courses));
+  majBadge();
+  document.getElementById('success-banner').classList.add('visible');
+  document.getElementById('btn-enregistrer').disabled = true;
+  showToast(estAllerRetour ? '✅ 2 trajets enregistrés !' : '✅ Course enregistrée !');
+  setTimeout(resetSaisie, 2000);
+}
+
+function resetSaisie() {
+  donneesBon = null; donneesAller = null; donneesRetour = null;
+  ['bon','aller','retour'].forEach(t => {
+    document.getElementById('check-' + t).textContent = '📷';
+    const p = document.getElementById('preview-' + t); if(p){ p.classList.remove('visible'); p.src=''; }
+    const l = document.getElementById('loader-' + t); if(l) l.classList.remove('visible');
+    const e = document.getElementById('erreur-' + t); if(e) e.classList.remove('visible');
+    const c = document.getElementById('champs-' + t); if(c){ c.classList.remove('visible'); c.innerHTML=''; }
+    const i = document.getElementById('input-' + t); if(i) i.value='';
+  });
+  ['aller','retour'].forEach(t => {
+    const b = document.getElementById('bloc-' + t); if(b) b.classList.remove('done');
+    const ab = document.getElementById('autoroute-' + t + '-bloc'); if(ab) ab.style.display='none';
+    const sw = document.getElementById('autoroute-' + t); if(sw) sw.checked=false;
+    const mr = document.getElementById('montant-' + t + '-row'); if(mr) mr.style.display='none';
+    const mi = document.getElementById('montant-' + t); if(mi) mi.value='0';
+  });
+  document.getElementById('toggle-ar').checked = false;
+  estAllerRetour = false;
+  toggleAllerRetour();
+  document.getElementById('success-banner').classList.remove('visible');
+  document.getElementById('btn-enregistrer').disabled = true;
+}
+
+// ── LISTE COURSES ──
+function renderCourses() {
+  const el = document.getElementById('liste-courses');
+  if (!courses.length) { el.innerHTML = `<div class="liste-vide"><div class="emoji">📭</div><p>Aucune course cette semaine.</p></div>`; return; }
+  el.innerHTML = courses.map(c => {
+    const tags = [];
+    if (c.bon?.type_transport === 'HOSPITALISATION') tags.push('<span class="tag-vert">Hospi</span>'); else tags.push('<span class="tag-rouge">Consultation</span>');
+    if (c.ticket?.retour_a_vide === 'OUI') tags.push('<span class="tag-vert">À vide</span>');
+    if (c.bon?.ald_exonerante === 'OUI') tags.push('<span class="tag-vert">ALD</span>');
+    if (c.ticket?.autoroute === 'OUI') tags.push(`<span class="tag-rouge">Péage ${c.ticket?.montant_autoroute ? c.ticket.montant_autoroute+'€' : ''}</span>`);
+    if (c.sens) tags.push(`<span class="tag-rouge">${c.sens}</span>`);
+    return `<div class="recap-course">
+      <div class="recap-course-header">
+        <div><div class="recap-nom">${c.bon?.nom_patient||'—'} ${c.bon?.prenom_patient||''}</div>
+        <div class="recap-date">${c.ticket?.date||''} · ${c.ticket?.heure_depart||''}→${c.ticket?.heure_arrivee||''}</div></div>
+        <div style="font-size:13px; color:var(--gris-moyen)">Tarif ${c.ticket?.tarif||'?'}</div>
+      </div>
+      <div class="recap-infos">${c.ticket?.lieu_depart||'—'} → ${c.ticket?.lieu_arrivee||'—'} · ${c.ticket?.distance_km||'?'} km</div>
+      <div class="recap-tags">${tags.join('')}</div>
+      <div>
+        <button class="btn-modifier" onclick="ouvrirModal(${c.id})">✏️ Modifier</button>
+        <button class="btn-supprimer" onclick="supprimerCourse(${c.id})">🗑️ Supprimer</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── MODAL MODIFICATION ──
+function ouvrirModal(id) {
+  const c = courses.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('modal-id').value = id;
+  document.getElementById('m-date').value = c.ticket?.date || '';
+  document.getElementById('m-hdep').value = c.ticket?.heure_depart || '';
+  document.getElementById('m-harr').value = c.ticket?.heure_arrivee || '';
+  document.getElementById('m-ldep').value = c.ticket?.lieu_depart || '';
+  document.getElementById('m-larr').value = c.ticket?.lieu_arrivee || '';
+  document.getElementById('m-dist').value = c.ticket?.distance_km || '';
+  document.getElementById('m-tarif').value = c.ticket?.tarif || 'A';
+  document.getElementById('m-vide').value = c.ticket?.retour_a_vide || 'NON';
+  document.getElementById('m-autoroute').value = c.ticket?.autoroute || 'NON';
+  document.getElementById('m-montant-auto').value = c.ticket?.montant_autoroute || '';
+  toggleModalMontant();
+  document.getElementById('m-nom').value = c.bon?.nom_patient || '';
+  document.getElementById('m-prenom').value = c.bon?.prenom_patient || '';
+  document.getElementById('m-secu').value = c.bon?.numero_secu || '';
+  document.getElementById('m-adresse').value = c.bon?.adresse_patient || '';
+  document.getElementById('m-type').value = c.bon?.type_transport || 'HOSPITALISATION';
+  document.getElementById('m-ald').value = c.bon?.ald_exonerante || 'NON';
+  document.getElementById('m-medecin').value = c.bon?.nom_medecin || '';
+  document.getElementById('m-rpps').value = c.bon?.numero_rpps || '';
+  document.getElementById('m-structure').value = c.bon?.structure_soins || '';
+  document.getElementById('m-caisse').value = c.bon?.caisse_sante || '';
+  document.getElementById('m-finess').value = c.bon?.numero_finess || '';
+  document.getElementById('m-dateprescription').value = c.bon?.date_prescription || '';
+  document.getElementById('modal-overlay').classList.add('visible');
+}
+
+function fermerModal(e) { if (e.target === document.getElementById('modal-overlay')) fermerModalBtn(); }
+function fermerModalBtn() { document.getElementById('modal-overlay').classList.remove('visible'); }
+
+function sauvegarderModif() {
+  const id = parseInt(document.getElementById('modal-id').value);
+  const idx = courses.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  courses[idx].ticket.date = document.getElementById('m-date').value;
+  courses[idx].ticket.heure_depart = document.getElementById('m-hdep').value;
+  courses[idx].ticket.heure_arrivee = document.getElementById('m-harr').value;
+  courses[idx].ticket.lieu_depart = document.getElementById('m-ldep').value;
+  courses[idx].ticket.lieu_arrivee = document.getElementById('m-larr').value;
+  courses[idx].ticket.distance_km = document.getElementById('m-dist').value;
+  courses[idx].ticket.tarif = document.getElementById('m-tarif').value;
+  courses[idx].ticket.retour_a_vide = document.getElementById('m-vide').value;
+  courses[idx].ticket.autoroute = document.getElementById('m-autoroute').value;
+  courses[idx].ticket.montant_autoroute = document.getElementById('m-montant-auto').value;
+  courses[idx].bon.nom_patient = document.getElementById('m-nom').value;
+  courses[idx].bon.prenom_patient = document.getElementById('m-prenom').value;
+  courses[idx].bon.numero_secu = document.getElementById('m-secu').value;
+  courses[idx].bon.adresse_patient = document.getElementById('m-adresse').value;
+  courses[idx].bon.type_transport = document.getElementById('m-type').value;
+  courses[idx].bon.ald_exonerante = document.getElementById('m-ald').value;
+  courses[idx].bon.nom_medecin = document.getElementById('m-medecin').value;
+  courses[idx].bon.numero_rpps = document.getElementById('m-rpps').value;
+  courses[idx].bon.structure_soins = document.getElementById('m-structure').value;
+  courses[idx].bon.caisse_sante = document.getElementById('m-caisse').value;
+  courses[idx].bon.numero_finess = document.getElementById('m-finess').value;
+  courses[idx].bon.date_prescription = document.getElementById('m-dateprescription').value;
+  localStorage.setItem('courses_taxi', JSON.stringify(courses));
+  fermerModalBtn();
+  renderCourses();
+  showToast('✅ Course modifiée !');
+}
+
+function supprimerCourse(id) {
+  if (!confirm('Supprimer cette course ?')) return;
+  courses = courses.filter(c => c.id !== id);
+  localStorage.setItem('courses_taxi', JSON.stringify(courses));
+  majBadge();
+  renderCourses();
+  showToast('Course supprimée');
+}
+
+// ── STATS & EXPORT ──
+function renderStats() {
+  document.getElementById('stat-nb').textContent = courses.length;
+  document.getElementById('stat-vide').textContent = courses.filter(c => c.ticket?.retour_a_vide === 'OUI').length;
+  document.getElementById('stat-hosp').textContent = courses.filter(c => c.bon?.type_transport === 'HOSPITALISATION').length;
+  document.getElementById('stat-ar').textContent = courses.filter(c => c.sens === 'Aller').length;
+}
+
+function exportCSV() {
+  if (!courses.length) { showToast('Aucune course à exporter'); return; }
+  const cols = ['Sens','Date','Heure départ','Heure arrivée','Lieu départ','Lieu arrivée','Distance (km)','Tarif','Retour à vide','Autoroute','Montant péage (€)','Nom patient','Prénom patient','N° sécu','Adresse patient','Type transport','ALD exonérante','Aller-retour','Nb série','Médecin','N° RPPS','Structure soins','Adresse structure','Caisse santé','N° FINESS','Date prescription','Exo TM','Conducteur','Immatriculation'];
+  const rows = courses.map(c => [
+    c.sens||'', c.ticket?.date, c.ticket?.heure_depart, c.ticket?.heure_arrivee,
+    c.ticket?.lieu_depart, c.ticket?.lieu_arrivee, c.ticket?.distance_km, c.ticket?.tarif,
+    c.ticket?.retour_a_vide, c.ticket?.autoroute, c.ticket?.montant_autoroute,
+    c.bon?.nom_patient, c.bon?.prenom_patient, c.bon?.numero_secu, c.bon?.adresse_patient,
+    c.bon?.type_transport, c.bon?.ald_exonerante, c.bon?.aller_retour, c.bon?.nb_transports_serie,
+    c.bon?.nom_medecin, c.bon?.numero_rpps, c.bon?.structure_soins, c.bon?.adresse_structure,
+    c.bon?.caisse_sante, c.bon?.numero_finess, c.bon?.date_prescription, c.bon?.exoneration_ticket_moderateur, c.conducteur, c.immat
+  ].map(v => '"'+(v||'').replace(/"/g,'""')+'"').join(';'));
+  const csv = '\uFEFF' + [cols.join(';'), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+  a.download = `courses_taxi_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('✅ CSV téléchargé');
+}
+
+function viderSemaine() { courses = []; localStorage.setItem('courses_taxi','[]'); majBadge(); renderCourses(); renderStats(); showToast('Semaine vidée'); }
+function majBadge() { document.getElementById('badge-semaine').textContent = courses.length + ' trajet' + (courses.length > 1 ? 's' : ''); }
+function sauvegarderApiKey() {
+  localStorage.setItem('api_key', document.getElementById('set-apikey').value);
+  showToast('✅ Clé API sauvegardée');
+}
+
+function sauvegarderReglages() { reglages = { conducteur: document.getElementById('set-conducteur').value, immat: document.getElementById('set-immat').value, raison: document.getElementById('set-raison').value }; localStorage.setItem('reglages_taxi', JSON.stringify(reglages)); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+</script>
+
+
+</body></html>
